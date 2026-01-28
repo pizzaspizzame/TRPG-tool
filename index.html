@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>세션 준비 작업기</title>
+
+<style>
+body {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  background: #e9ebee;
+  color: #333;
+  padding: 20px;
+  line-height: 1.5;
+}
+
+textarea {
+  width: 100%;
+  height: 120px;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+  resize: vertical;
+}
+
+.input-group {
+  margin: 15px 0;
+}
+
+input {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-right: 10px;
+}
+
+button {
+  padding: 10px 16px;
+  background-color: #5bc0de;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+button:hover { background-color: #31b0d5; }
+
+.sentence-container {
+  max-height: 300px;
+  overflow-y: auto;
+  margin-bottom: 10px;
+  border: 1px dashed #bbb;
+  padding: 5px;
+}
+
+.sentence {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+  background: #fff;
+  padding: 8px;
+  border-radius: 4px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.sentence span { flex: 1; font-size: 14px; color: #444; }
+
+.npc-input {
+  width: 80px;
+  padding: 4px;
+  font-size: 12px;
+  display: none;
+}
+
+.scroll-box {
+  background: #fff;
+  border: 1px solid #ddd;
+  padding: 15px;
+  height: 450px;
+  overflow-y: auto;
+  border-radius: 4px;
+}
+
+.output {
+  background: #1a1a1a;
+  color: #d4d4d4;
+  white-space: pre-wrap;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 12px;
+  line-height: 1.4;
+  word-break: break-all;
+}
+
+.preview {
+  background: #f3f3f3;
+}
+
+.r20-desc {
+  background: #ffffff;
+  border: 1px solid #ccc;
+  padding: 8px;
+  margin-bottom: 5px;
+  border-radius: 3px;
+  color: #000;
+  font-size: 13px;
+}
+
+.r20-judge {
+  text-decoration: none; font-size:12px; text-align: center; display: inline-block;
+  color: white; text-shadow: 0px 0px 5px #000; letter-spacing: -1px;
+  padding: 5px 40px; border-radius: 20px; border: 1px solid #FFFFFF;
+  box-shadow: 0 0 2px 1px #8f8f8f; margin: 10px 0;
+}
+
+.r20-emas {
+  font-style: italic;
+  color: #2c3e50;
+  margin-bottom: 8px;
+  padding-left: 5px;
+  font-size: 13px;
+}
+
+.r20-as {
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+.r20-as-name {
+  font-weight: bold;
+  margin-right: 5px;
+}
+
+.copy-btn { background: #5cb85c; margin-bottom: 10px; width: 100%; }
+.copy-btn:hover { background: #449d44; }
+
+.flex-row {
+  display: flex;
+  gap: 20px;
+  margin-top: 10px;
+}
+
+.flex-col {
+  flex: 1;
+  min-width: 0;
+}
+</style>
+</head>
+<body>
+
+<h2>🎲 세션 준비 작업기</h2>
+
+<textarea id="input" placeholder="여기에 시나리오 텍스트를 입력하세요..."></textarea>
+
+<div class="input-group">
+  KPC: <input id="kpcName" placeholder="KPC 이름">
+  PC: <input id="pcName" placeholder="PC 이름">
+  <button onclick="splitSentences()">문장 나누기</button>
+</div>
+
+<div id="sentenceArea" class="sentence-container"></div>
+
+<button onclick="convert()" style="width:100%; margin-top:10px; background:#4a4a4a; height: 45px;">적용 및 변환</button>
+
+<div class="flex-row">
+  <div class="flex-col">
+    <h3>📋 Roll20 복사용</h3>
+    <button class="copy-btn" onclick="copyResult()">전체 코드 복사</button>
+    <div class="scroll-box output" id="output"></div>
+  </div>
+  
+  <div class="flex-col">
+    <h3>👁 실시간 미리보기</h3>
+    <div style="height: 38px; margin-bottom: 10px;"></div>
+    <div class="scroll-box preview" id="preview"></div>
+  </div>
+</div>
+
+<script>
+const styles = {
+  기본: {
+    roll: (t) => `/desc [${t}](#" style="color:#000000; text-decoration:none;)`,
+    previewClass: "r20-desc",
+    css: () => `color:#000000;`
+  },
+  NPC: {
+    roll: (t, n) => `/as "${n || "NPC"}" ${t}`,
+    previewClass: "r20-as",
+    css: () => ``
+  },
+  챕터: {
+    roll: (t) => `/desc [${t}](#" style="text-decoration:none; color:#333333; font-size:16px; font-style: normal; font-weight: normal; text-align:right; display:block;)`,
+    previewClass: "r20-desc",
+    css: () => `text-decoration:none; color:#333333; font-size:16px; text-align:right; display:block;`
+  },
+  emas: {
+    roll: (t) => `/emas "" ${t}`,
+    previewClass: "r20-emas",
+    css: () => ``
+  },
+  판정: {
+    roll: (t, c1, c2) => `/desc [${t}](#" style=" text-decoration: none; font-size:12px; font-style: normal !important; text-align: center; display: inline-block; color: white; text-shadow: 0px 0px 5px #000; letter-spacing: -1px; padding: 5px 40px; margin-left: -4px; border-radius: 20px; border: 1px solid #FFFFFF; box-shadow: 0 0 2px 1px #8f8f8f; background-image: linear-gradient(90deg, ${c1} 0%, ${c2} 100%)`,
+    previewClass: "r20-judge",
+    css: (c1, c2) => `background-image: linear-gradient(90deg, ${c1} 0%, ${c2} 100%);`
+  },
+  샤방: {
+    roll: (t) => `/desc [${t}](#" style=" text-decoration: none; color:white;font-size:15px;text-shadow:3px 0px 6px #FE2E64,-5px 0px 10px #F5BCA9)`,
+    previewClass: "r20-desc",
+    css: () => `color:white; font-size:15px; text-shadow:2px 0px 5px #FE2E64; background:#FE2E64; padding:2px 4px; border-radius:3px;`
+  },
+  글리치: {
+    roll: (t) => `/desc [${t}](#" style=" text-decoration: none; color:#000000;text-shadow:1px 3px 2px #ff0000,2px 1px 2px #0100ff,5px 1px 0px #40FF00)`,
+    previewClass: "r20-desc",
+    css: () => `text-shadow:1px 2px 2px #ff0000, 2px 1px 2px #0100ff;`
+  },
+  큰글씨: {
+    roll: (t) => `/desc [${t}](" style="text-decoration:none;  color:#000000; font-size:20px;font-weight:bold;text-align:center;display:block;)`,
+    previewClass: "r20-desc",
+    css: () => `font-size:18px; font-weight:bold; text-align:center; display:block;`
+  },
+  궁서체: {
+    roll: (t) => `/desc [${t}](#" style="text-decoration:none; font-family:cursive;font-style:italic;color:red;text-align:center;display:block;)`,
+    previewClass: "r20-desc",
+    css: () => `font-family:serif; font-style:italic; color:red; text-align:center; display:block;`
+  },
+  색상: {
+    roll: (t, c) => `/desc [${t}](#" style="text-decoration:none; font-weight:bold; color:${c};)`,
+    previewClass: "r20-desc",
+    css: (c) => `color:${c}; font-weight:bold;`
+  }
+};
+
+function replaceNames(text) {
+  const kpc = document.getElementById("kpcName").value || "KPC";
+  const pc = document.getElementById("pcName").value || "PC";
+  return text.replaceAll("KPC", kpc).replaceAll("PC", pc);
+}
+
+function handleStyleChange(select) {
+  const row = select.parentElement;
+  const color1 = row.querySelector('.color1');
+  const color2 = row.querySelector('.color2');
+  const npcInput = row.querySelector('.npc-input');
+  
+  color1.style.display = (select.value === "색상" || select.value === "판정") ? "inline-block" : "none";
+  color2.style.display = (select.value === "판정") ? "inline-block" : "none";
+  npcInput.style.display = (select.value === "NPC") ? "inline-block" : "none";
+}
+
+function splitSentences() {
+  const area = document.getElementById("sentenceArea");
+  area.innerHTML = "";
+  const text = document.getElementById("input").value.trim();
+  if (!text) return;
+
+  const sentences = text.match(/("[^"]*"|[^.!?\n]+[.!?]?)/g).map(s => s.trim()).filter(s => s.length > 0);
+  
+  sentences.forEach(sentence => {
+    const row = document.createElement("div");
+    row.className = "sentence";
+    const span = document.createElement("span");
+    span.textContent = sentence;
+
+    const npcInput = document.createElement("input");
+    npcInput.className = "npc-input";
+    npcInput.placeholder = "NPC 이름";
+
+    const select = document.createElement("select");
+    select.onchange = () => handleStyleChange(select);
+    Object.keys(styles).forEach(k => {
+      const o = document.createElement("option");
+      o.value = k; o.textContent = k;
+      select.appendChild(o);
+    });
+
+    const color1 = document.createElement("input");
+    color1.type = "color"; color1.className = "color1"; color1.value = "#000000"; color1.style.display = "none";
+    
+    const color2 = document.createElement("input");
+    color2.type = "color"; color2.className = "color2"; color2.value = "#8f8f8f"; color2.style.display = "none";
+
+    row.appendChild(span);
+    row.appendChild(npcInput);
+    row.appendChild(select);
+    row.appendChild(color1);
+    row.appendChild(color2);
+    area.appendChild(row);
+  });
+}
+
+function convert() {
+  const rows = document.querySelectorAll(".sentence");
+  const out = [];
+  const prev = [];
+
+  rows.forEach(row => {
+    const rawText = row.querySelector("span").textContent;
+    const text = replaceNames(rawText);
+    const styleKey = row.querySelector("select").value;
+    const npcName = row.querySelector(".npc-input").value;
+    const c1 = row.querySelector(".color1").value;
+    const c2 = row.querySelector(".color2").value;
+    const style = styles[styleKey];
+
+    if (styleKey === "색상") {
+      out.push(style.roll(text, c1));
+      prev.push(`<div class="${style.previewClass}" style="${style.css(c1)}">${text}</div>`);
+    } else if (styleKey === "판정") {
+      out.push(style.roll(text, c1, c2));
+      prev.push(`<div class="${style.previewClass}" style="${style.css(c1, c2)}">${text}</div>`);
+    } else if (styleKey === "NPC") {
+      out.push(style.roll(text, npcName));
+      prev.push(`<div class="${style.previewClass}"><span class="r20-as-name">${npcName || "NPC"}:</span><span>${text}</span></div>`);
+    } else {
+      out.push(style.roll(text));
+      prev.push(`<div class="${style.previewClass}" style="${style.css ? style.css() : ''}">${text}</div>`);
+    }
+  });
+
+  document.getElementById("output").textContent = out.join("\n");
+  document.getElementById("preview").innerHTML = prev.join("");
+}
+
+function copyResult() {
+  const text = document.getElementById("output").textContent;
+  if(!text) return;
+  navigator.clipboard.writeText(text);
+  const btn = document.querySelector(".copy-btn");
+  btn.textContent = "✔ 복사되었습니다!";
+  setTimeout(() => btn.textContent = "전체 코드 복사", 1000);
+}
+</script>
+</body>
+</html>
