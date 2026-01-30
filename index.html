@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <title>세션 준비 작업기</title>
-
 <style>
 body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: #e9ebee; color: #333; padding: 20px; line-height: 1.5; }
 textarea { width: 100%; height: 120px; padding: 12px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; resize: vertical; }
@@ -11,14 +10,11 @@ textarea { width: 100%; height: 120px; padding: 12px; border: 1px solid #ccc; bo
 input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
 .name-input { width: 120px; }
 .josa-label { font-size: 12px; color: #666; cursor: pointer; display: flex; align-items: center; gap: 3px; }
-
 .batchim-group { display: none; gap: 2px; background: #ddd; padding: 2px; border-radius: 4px; }
 .batchim-btn { padding: 4px 8px; font-size: 11px; border: none; background: #eee; cursor: pointer; color: #666; border-radius: 2px; }
 .batchim-btn.active { background: #5bc0de; color: white; font-weight: bold; }
-
 button.main-btn { padding: 10px 16px; background-color: #5bc0de; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
 button.main-btn:hover { background-color: #31b0d5; }
-
 .sentence-container { max-height: 300px; overflow-y: auto; margin-bottom: 10px; border: 1px dashed #bbb; padding: 5px; }
 .sentence { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; background: #fff; padding: 8px; border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
 .sentence span { flex: 1; font-size: 14px; color: #444; outline: none; border-bottom: 1px solid transparent; }
@@ -81,10 +77,7 @@ button.main-btn:hover { background-color: #31b0d5; }
 </div>
 
 <script>
-let batchimState = {
-  kpc: null, 
-  pc: null
-};
+let batchimState = { kpc: null, pc: null };
 
 const styles = {
   기본: { roll: (t) => `/desc [${t}](#" style="color:#000000; text-decoration:none;)`, previewClass: "r20-desc", css: () => `color:#000000;` },
@@ -92,11 +85,7 @@ const styles = {
   챕터: { roll: (t) => `/desc [${t}](#" style="text-decoration:none; color:#333333; font-size:16px; font-style: normal; font-weight: normal; text-align:right; display:block;)`, previewClass: "r20-desc", css: () => `text-decoration:none; color:#333333; font-size:16px; text-align:right; display:block;` },
   emas: { roll: (t) => `/emas "" ${t}`, previewClass: "r20-emas", css: () => `` },
   판정: { roll: (t, c1, c2) => `/desc [${t}](#" style=" text-decoration: none; font-size:12px; font-style: normal !important; text-align: center; display: inline-block; color: white; text-shadow: 0px 0px 5px #000; letter-spacing: -1px; padding: 5px 40px; margin-left: -4px; border-radius: 20px; border: 1px solid #FFFFFF; box-shadow: 0 0 2px 1px #8f8f8f; background-image: linear-gradient(90deg, ${c1} 0%, ${c2} 100%)`, previewClass: "r20-judge", css: (c1, c2) => `background-image: linear-gradient(90deg, ${c1} 0%, ${c2} 100%);` },
-  배경색: { 
-    roll: (t, c1, c2) => `/desc [${t}](#" style="text-decoration:none; color:${c1}; background-color:${c2}; text-align:center; display:block; padding:2px; box-shadow: 0px 8px 0px 15px ${c2};)`, 
-    previewClass: "r20-desc", 
-    css: (c1, c2) => `color:${c1}; background-color:${c2}; text-align:center; display:block; padding:10px; margin: 15px 0;` 
-  },
+  배경색: { roll: (t, c1, c2) => `/desc [${t}](#" style="text-decoration:none; color:${c1}; background-color:${c2}; text-align:center; display:block; padding:2px; box-shadow: 0px 8px 0px 15px ${c2};)`, previewClass: "r20-desc", css: (c1, c2) => `color:${c1}; background-color:${c2}; text-align:center; display:block; padding:10px; margin: 15px 0;` },
   샤방: { roll: (t) => `/desc [${t}](#" style=" text-decoration: none; color:white;font-size:15px;text-shadow:3px 0px 6px #FE2E64,-5px 0px 10px #F5BCA9)`, previewClass: "r20-desc", css: () => `color:white; font-size:15px; text-shadow:2px 0px 5px #FE2E64; background:#FE2E64; padding:2px 4px; border-radius:3px;` },
   글리치: { roll: (t) => `/desc [${t}](#" style=" text-decoration: none; color:#000000;text-shadow:1px 3px 2px #ff0000,2px 1px 2px #0100ff,5px 1px 0px #40FF00)`, previewClass: "r20-desc", css: () => `text-shadow:1px 2px 2px #ff0000, 2px 1px 2px #0100ff;` },
   큰글씨: { roll: (t) => `/desc [${t}](" style="text-decoration:none;  color:#000000; font-size:20px;font-weight:bold;text-align:center;display:block;)`, previewClass: "r20-desc", css: () => `font-size:18px; font-weight:bold; text-align:center; display:block;` },
@@ -108,7 +97,6 @@ function toggleBatchimGroup(type) {
   const isChecked = document.getElementById(type + 'JosaToggle').checked;
   const group = document.getElementById(type + 'BatchimGroup');
   group.style.display = isChecked ? 'flex' : 'none';
-  
   if (isChecked && batchimState[type] === null) {
     const name = document.getElementById(type + 'Name').value;
     setBatchim(type, hasBatchim(name));
@@ -117,13 +105,9 @@ function toggleBatchimGroup(type) {
 
 function setBatchim(type, status) {
   batchimState[type] = status;
-  
   document.getElementById(`${type}-O`).classList.toggle('active', status === true);
   document.getElementById(`${type}-X`).classList.toggle('active', status === false);
-  
-  if (document.querySelectorAll('.sentence').length > 0) {
-    convert(); 
-  }
+  if (document.querySelectorAll('.sentence').length > 0) { convert(); }
 }
 
 function hasBatchim(name) {
@@ -139,25 +123,22 @@ function getCorrectJosa(name, josa, forcedBatchim) {
   if (["은", "는"].includes(josa)) return batchim ? "은" : "는";
   if (["이", "가"].includes(josa)) return batchim ? "이" : "가";
   if (["을", "를"].includes(josa)) return batchim ? "을" : "를";
+  if (["와", "과"].includes(josa)) return batchim ? "과" : "와";
   return josa;
 }
 
 function replaceWithJosa(text, targetPattern, name, type) {
   const isJosaEnabled = document.getElementById(type + 'JosaToggle').checked;
   const forcedBatchim = batchimState[type];
-
   if (!isJosaEnabled) return text.replace(new RegExp(targetPattern, 'gi'), name);
-
-  const josaRegex = new RegExp(`${targetPattern}(은|는|을|를|이가|이|가)`, 'gi');
+  const josaRegex = new RegExp(`${targetPattern}(은|는|을|를|이가|이|가|와|과)`, 'gi');
   text = text.replace(josaRegex, (match, josa) => name + getCorrectJosa(name, josa, forcedBatchim));
-  
   return text.replace(new RegExp(targetPattern, 'gi'), name);
 }
 
 function replaceNames(text) {
   const kpcName = document.getElementById("kpcName").value || "KPC";
   const pcName = document.getElementById("pcName").value || "PC";
-
   let replaced = text;
   replaced = replaceWithJosa(replaced, "KPC", kpcName, 'kpc');
   replaced = replaceWithJosa(replaced, "PC", pcName, 'pc');
@@ -180,24 +161,17 @@ function splitSentences() {
   area.innerHTML = "";
   const rawInput = document.getElementById("input").value.trim();
   if (!rawInput) return;
-
   const processedText = replaceNames(rawInput);
-  const sentences = processedText.match(/("[^"]*"|.+?([.!?]+|\n|$)|[.!?]+)/g)
-    .map(s => s.trim())
-    .filter(s => s.length > 0);
-
+  const sentences = processedText.match(/("[^"]*"|.+?([.!?]+|\n|$)|[.!?]+)/g).map(s => s.trim()).filter(s => s.length > 0);
   sentences.forEach(sentence => {
     const row = document.createElement("div");
     row.className = "sentence";
-    
     const span = document.createElement("span");
     span.textContent = sentence;
     span.contentEditable = true;
-
     const npcInput = document.createElement("input");
     npcInput.className = "npc-input";
     npcInput.placeholder = "NPC 이름";
-
     const select = document.createElement("select");
     select.onchange = () => handleStyleChange(select);
     Object.keys(styles).forEach(k => {
@@ -205,13 +179,10 @@ function splitSentences() {
       o.value = k; o.textContent = k;
       select.appendChild(o);
     });
-
     const color1 = document.createElement("input");
     color1.type = "color"; color1.className = "color1"; color1.value = "#000000"; color1.style.display = "none";
-    
     const color2 = document.createElement("input");
     color2.type = "color"; color2.className = "color2"; color2.value = "#ffffff"; color2.style.display = "none";
-
     row.appendChild(span);
     row.appendChild(npcInput);
     row.appendChild(select);
@@ -225,16 +196,13 @@ function convert() {
   const rows = document.querySelectorAll(".sentence");
   const out = [];
   const prev = [];
-
   rows.forEach(row => {
-    const text = row.querySelector("span").textContent; 
-    
+    const text = row.querySelector("span").textContent;
     const styleKey = row.querySelector("select").value;
     const npcName = row.querySelector(".npc-input").value;
     const c1 = row.querySelector(".color1").value;
     const c2 = row.querySelector(".color2").value;
     const style = styles[styleKey];
-
     if (styleKey === "색상") {
       out.push(style.roll(text, c1));
       prev.push(`<div class="${style.previewClass}" style="${style.css(c1)}">${text}</div>`);
@@ -249,7 +217,6 @@ function convert() {
       prev.push(`<div class="${style.previewClass}" style="${style.css ? style.css() : ''}">${text}</div>`);
     }
   });
-
   document.getElementById("output").textContent = out.join("\n");
   document.getElementById("preview").innerHTML = prev.join("");
 }
